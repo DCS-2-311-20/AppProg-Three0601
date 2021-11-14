@@ -90,6 +90,7 @@ function init() {
   const PREFIX = "SHTV_Prefab_Car_";
   const cars = []; // 車のオブジェクトのリスト
   const carNames = []; // 車の名前のリスト
+  let myCar = null;
   const loader = new THREE.GLTFLoader();
   loader.load("glTF/scene.gltf", model => {
     console.log(model);
@@ -128,7 +129,18 @@ function init() {
     gui.add(controls, "Add a car");
     // 手動運転のスイッチをGUIコントローラに追加する
     controls["Self driving"] = false;
-    gui.add(controls, "Self driving");
+    gui.add(controls, "Self driving").onChange((value)=>{
+      if (value) {
+        myCar = cars[controls.car];
+        delete cars[controls.car];
+        myCar.position.set(90, 0, 25);
+      }
+      else {
+        if (myCar != null) {
+          cars[controls.car] = myCar;
+        }
+      }
+    });
     gui.close();gui.open();
 
     requestAnimationFrame(update);
