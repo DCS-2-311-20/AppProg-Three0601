@@ -28,10 +28,15 @@ function init() {
     .appendChild(renderer.domElement);
 
   // カメラの制御を入れる
-  const cameraControl = new THREE.TrackballControls(
+  const cameraControl1 = new THREE.TrackballControls(
     camera,
     document.getElementById("WebGL-output")
   );
+  const cameraControl2 = new THREE.FirstPersonControls(
+    camera,
+    document.getElementById("WebGL-output")
+  );
+  let cameraControl = cameraControl1;
 
   // 平面の作成
   const textureLoader = new THREE.TextureLoader();
@@ -91,6 +96,7 @@ function init() {
   const cars = []; // 車のオブジェクトのリスト
   const carNames = []; // 車の名前のリスト
   let myCar = null;
+  let myCarName = null;
   const loader = new THREE.GLTFLoader();
   loader.load("glTF/scene.gltf", model => {
     console.log(model);
@@ -131,13 +137,15 @@ function init() {
     controls["Self driving"] = false;
     gui.add(controls, "Self driving").onChange((value)=>{
       if (value) {
-        myCar = cars[controls.car];
-        delete cars[controls.car];
+        myCarName = controls.car;
+        myCar = cars[myCarName];
+        delete cars[myCarName];
         myCar.position.set(90, 0, 25);
+        myCar.rotation.y = -Math.PI/2;
       }
       else {
         if (myCar != null) {
-          cars[controls.car] = myCar;
+          cars[myCarName] = myCar;
         }
       }
     });
