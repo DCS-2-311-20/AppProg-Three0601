@@ -22,9 +22,7 @@ function init() {
   camera1.lookAt(new THREE.Vector3(0, 0.8, 0));
 
   const camera2 = new THREE.PerspectiveCamera(
-    60, window.innerWidth/window.innerHeight, 0.1, 1000);
-  camera2.position.set(100, 1, 25);
-  camera2.lookAt(new THREE.Vector3(90, 1, 25));
+    80, window.innerWidth/window.innerHeight, 0.1, 1000);
 
   // レンダラの設定
   const renderer = new THREE.WebGLRenderer();
@@ -139,14 +137,20 @@ function init() {
       if (value) {
         myCarName = controls.car;
         myCar = cars[myCarName];
+        /*
         delete cars[myCarName];
-        myCar.position.copy(myCarPosition);
+        myCarRotation = -Math.PI/2;
+        rotationSpeed = 0;
+        forwardSpeed = 0;
+        */
       }
       else {
+        /*
         if (myCar != null) {
           cars[myCarName] = myCar;
           myCar = null;
         }
+        */
       }
     });
     gui.close();gui.open();
@@ -201,7 +205,7 @@ function init() {
     courseObj.renderOrder = 1;
     scene.add(courseObj);
   }
-  
+
   // 描画処理
   const carPosition = new THREE.Vector3();
   const carTarget = new THREE.Vector3();
@@ -253,13 +257,26 @@ function init() {
       cars[cname].lookAt(carTarget);
       i++;
     }
+    if (controls["Self driving"]) {
+      const cameraVector = new THREE.Vector3(0, 4, -3);
+      cameraVector.applyQuaternion(myCar.quaternion);
+      const camera2Position = myCar.position.clone();
+      camera2Position.add(cameraVector);
+      camera2.position.copy(camera2Position);
+      camera2.lookAt(myCar.position.x, myCar.position.y+2, myCar.position.z);
+      renderer.render(scene, camera2);
+    }
+    else {
+      cameraControl1.update();
+      renderer.render(scene, camera1);
+    }
+    /*
     if (myCar == null) {
       cameraControl1.update();
       renderer.render(scene, camera1);
     }
     else {
       const delta = clock.getDelta();
-      const myCarDirection = new THREE.Vector3(0, 0, 1);
       if ( forwardSpeed > 0 ) {
         if ( forwardSpeed > forwardSpeedMax ) {
           forwardSpeed = forwardSpeedMax;
@@ -268,17 +285,25 @@ function init() {
           forwardSpeed += forwardAcceleration;
         }
         myCarRotation += rotationSpeed * delta;
-        myCar.rotation.y = myCarRotation;
       }
       else {
         forwardAcceleration = 0;
         forwardSpeed = 0;
       }
+      myCar.rotation.y = myCarRotation;
+      const myCarDirection = new THREE.Vector3(0, 0, 1);
       myCarDirection.applyAxisAngle(yAxis, myCarRotation);
       myCarPosition.addScaledVector(myCarDirection, forwardSpeed * delta);
       myCar.position.copy(myCarPosition);
+      const cameraOffset = new THREE.Vector3(0, 0.8 -5);
+      cameraOffset.applyAxisAngle(yAxis, myCarRotation);
+      const camera2Position = new THREE.Vector3(myCarPosition);
+      camera2Position.add(cameraOffset);
+      //camera2.position.copy(camera2Position);
+      camera2.lookAt(myCarPosition);
       renderer.render(scene, camera2);
     }
+    */
     requestAnimationFrame(update);
   }
 }
