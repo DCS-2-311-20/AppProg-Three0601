@@ -61,6 +61,22 @@ function init() {
   roadmap4.position.set(-50,0,-37.5);
   scene.add(roadmap4);
 
+  // ビルの作成
+  //const buildingTexture = textureLoader.load("png/cityTexture.png");
+  function mkBuilding(x, z) {
+    const type = Math.floor(Math.random()*5);
+    const buildingHeight = [2, 2, 7, 4, 5];
+    const hBldg = buildingHeight[type]*5;
+    const geometry = new THREE.BoxGeometry(10, hBldg, 10);
+    const material = new THREE.MeshLambertMaterial({color: 0x808080});
+    const building = new THREE.Mesh(geometry, material);
+    building.position.set(x, hBldg/2, z);
+    console.log(building);
+    scene.add(building);
+  }
+  mkBuilding(70, 50);
+  mkBuilding(60, 50);
+  mkBuilding(50, 50);
   // 光源の設定
   { // ディレクショナルライト
     const light = new THREE.DirectionalLight();
@@ -205,7 +221,7 @@ function init() {
   const myCarPosition = new THREE.Vector3(90, 0, 25);
   let myCarRotation = -Math.PI/2;
   let rotationSpeed = 0;
-  const rotationSpeedMax = Math.PI/2;
+  const rotationMax = Math.PI/4;
   let forwardSpeed = 0;
   let forwardAcceleration = 0;
   const forwardSpeedMax = 20;
@@ -214,13 +230,10 @@ function init() {
   window.addEventListener("keydown", event => {
     // console.log(event.keyCode);
     switch ( event.keyCode ) {
-    case 37: rotationSpeed = rotationSpeedMax; break;
-    case 38:
-    forwardAcceleration = forwardSpeedMax/20;
-    forwardSpeed += forwardAcceleration;
-    break;
-    case 39: rotationSpeed = -rotationSpeedMax; break;
-    case 40: forwardAcceleration = -forwardSpeedMax/40; break;
+    case 37: rotationSpeed = rotationMax; break;
+    case 38: forwardAcceleration = forwardSpeedMax/20; break;
+    case 39: rotationSpeed = -rotationMax; break;
+    case 40: forwardAcceleration = -forwardSpeedMax/20; break;
     }
   });
   window.addEventListener("keyup", event => {
@@ -262,8 +275,9 @@ function init() {
         myCar.position.x,
         myCar.position.y+2,
         myCar.position.z);
+
       // 前進速度の調整
-      if ( forwardSpeed > 0 ) {
+      if ( forwardSpeed >= 0 ) {
         if ( forwardSpeed > forwardSpeedMax ) {
           forwardSpeed = forwardSpeedMax;
         }
@@ -285,46 +299,22 @@ function init() {
       if ( myCar.position.x >  100 ) myCar.position.x = -100;
       if ( myCar.position.z <  -75 ) myCar.position.x =   75;
       if ( myCar.position.z >   75 ) myCar.position.z =  -75;
+
+      // 自車の方向転換
+      const tempQuaternion = new THREE.Quaternion(
+        0, rotationSpeed * delta, 0, 1
+      );
+      myCar.quaternion.multiply(tempQuaternion);
+      myCar.rotation.setFromQuaternion(
+        myCar.quaternion,
+        myCar.rotation.order
+      );
       renderer.render(scene, camera2);
     }
     else {
       cameraControl1.update();
       renderer.render(scene, camera1);
     }
-    /*
-    if (myCar == null) {
-      cameraControl1.update();
-      renderer.render(scene, camera1);
-    }
-    else {
-      const delta = clock.getDelta();
-      if ( forwardSpeed > 0 ) {
-        if ( forwardSpeed > forwardSpeedMax ) {
-          forwardSpeed = forwardSpeedMax;
-        }
-        else {
-          forwardSpeed += forwardAcceleration;
-        }
-        myCarRotation += rotationSpeed * delta;
-      }
-      else {
-        forwardAcceleration = 0;
-        forwardSpeed = 0;
-      }
-      myCar.rotation.y = myCarRotation;
-      const myCarDirection = new THREE.Vector3(0, 0, 1);
-      myCarDirection.applyAxisAngle(yAxis, myCarRotation);
-      myCarPosition.addScaledVector(myCarDirection, forwardSpeed * delta);
-      myCar.position.copy(myCarPosition);
-      const cameraOffset = new THREE.Vector3(0, 0.8 -5);
-      cameraOffset.applyAxisAngle(yAxis, myCarRotation);
-      const camera2Position = new THREE.Vector3(myCarPosition);
-      camera2Position.add(cameraOffset);
-      //camera2.position.copy(camera2Position);
-      camera2.lookAt(myCarPosition);
-      renderer.render(scene, camera2);
-    }
-    */
     requestAnimationFrame(update);
   }
 }
