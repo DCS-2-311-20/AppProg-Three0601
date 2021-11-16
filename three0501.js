@@ -137,20 +137,13 @@ function init() {
       if (value) {
         myCarName = controls.car;
         myCar = cars[myCarName];
-        /*
         delete cars[myCarName];
-        myCarRotation = -Math.PI/2;
-        rotationSpeed = 0;
-        forwardSpeed = 0;
-        */
       }
       else {
-        /*
         if (myCar != null) {
           cars[myCarName] = myCar;
           myCar = null;
         }
-        */
       }
     });
     gui.close();gui.open();
@@ -215,11 +208,11 @@ function init() {
   const rotationSpeedMax = Math.PI/2;
   let forwardSpeed = 0;
   let forwardAcceleration = 0;
-  const forwardSpeedMax = 10;
+  const forwardSpeedMax = 20;
   const yAxis = new THREE.Vector3(0, 1, 0);
   // キー入力
   window.addEventListener("keydown", event => {
-    console.log(event.keyCode);
+    // console.log(event.keyCode);
     switch ( event.keyCode ) {
     case 37: rotationSpeed = rotationSpeedMax; break;
     case 38:
@@ -257,13 +250,41 @@ function init() {
       cars[cname].lookAt(carTarget);
       i++;
     }
+    const delta = clock.getDelta();
     if (controls["Self driving"]) {
+      // カメラに自車を追跡させる
       const cameraVector = new THREE.Vector3(0, 4, -3);
       cameraVector.applyQuaternion(myCar.quaternion);
       const camera2Position = myCar.position.clone();
       camera2Position.add(cameraVector);
       camera2.position.copy(camera2Position);
-      camera2.lookAt(myCar.position.x, myCar.position.y+2, myCar.position.z);
+      camera2.lookAt(
+        myCar.position.x,
+        myCar.position.y+2,
+        myCar.position.z);
+      // 前進速度の調整
+      if ( forwardSpeed > 0 ) {
+        if ( forwardSpeed > forwardSpeedMax ) {
+          forwardSpeed = forwardSpeedMax;
+        }
+        else {
+          forwardSpeed += forwardAcceleration;
+        }
+      }
+      else {
+        forwardAcceleration = 0;
+        forwardSpeed = 0;
+      }
+      // 自車を前進させる
+      const myCarVector = new THREE.Vector3(0, 0, 1);
+      myCarVector.applyQuaternion(myCar.quaternion);
+      const myCarPosition = myCar.position.clone();
+      myCarPosition.addScaledVector(myCarVector, forwardSpeed * delta);
+      myCar.position.copy(myCarPosition);
+      if ( myCar.position.x < -100 ) myCar.position.x =  100;
+      if ( myCar.position.x >  100 ) myCar.position.x = -100;
+      if ( myCar.position.z <  -75 ) myCar.position.x =   75;
+      if ( myCar.position.z >   75 ) myCar.position.z =  -75;
       renderer.render(scene, camera2);
     }
     else {
