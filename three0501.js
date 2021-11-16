@@ -62,21 +62,47 @@ function init() {
   scene.add(roadmap4);
 
   // ビルの作成
-  //const buildingTexture = textureLoader.load("png/cityTexture.png");
+  const buildingTexture = textureLoader.load("png/cityTexture.png");
   function mkBuilding(x, z) {
     const type = Math.floor(Math.random()*5);
     const buildingHeight = [2, 2, 7, 4, 5];
     const hBldg = buildingHeight[type]*5;
     const geometry = new THREE.BoxGeometry(10, hBldg, 10);
-    const material = new THREE.MeshLambertMaterial({color: 0x808080});
+    const material = new THREE.MeshLambertMaterial({map: buildingTexture});
+    const topUvS = (type*2+2)/11;
+    const topUvE = (type*2+3)/11;
+    const sideUvS = (type*2+1)/11;
+    const sideUvE = (type*2+2)/11;
+    const uvs = geometry.getAttribute("uv");
+    for (let i = 0; i < 48; i+=4) {
+      if ( i < 16 || i > 22) {
+        uvs.array[i] = sideUvS;
+        uvs.array[i+2] = sideUvE;
+      } else {
+        uvs.array[i] = topUvS;
+        uvs.array[i+2] = topUvE;
+      }
+    }
+    geometry.setAttribute("uv", uvs, 2);
     const building = new THREE.Mesh(geometry, material);
     building.position.set(x, hBldg/2, z);
-    console.log(building);
     scene.add(building);
   }
   mkBuilding(70, 50);
   mkBuilding(60, 50);
   mkBuilding(50, 50);
+
+  mkBuilding(-30, 50);
+  mkBuilding(-40, 50);
+  mkBuilding(-50, 50);
+
+  mkBuilding(70, -25);
+  mkBuilding(60, -25);
+  mkBuilding(50, -25);
+
+  mkBuilding(-30, -25);
+  mkBuilding(-40, -25);
+  mkBuilding(-50, -25);
   // 光源の設定
   { // ディレクショナルライト
     const light = new THREE.DirectionalLight();
