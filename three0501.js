@@ -14,10 +14,17 @@ function init() {
   const scene = new THREE.Scene();
 
   // カメラの作成
-  const camera = new THREE.PerspectiveCamera(
+  let myCar = null;
+  let myCarName = null;
+  const camera1 = new THREE.PerspectiveCamera(
     60, window.innerWidth/window.innerHeight, 0.1, 1000);
-  camera.position.set(100, 20, 75);
-  camera.lookAt(new THREE.Vector3(0, 0.8, 0));
+  camera1.position.set(100, 20, 75);
+  camera1.lookAt(new THREE.Vector3(0, 0.8, 0));
+
+  const camera2 = new THREE.PerspectiveCamera(
+    60, window.innerWidth/window.innerHeight, 0.1, 1000);
+  camera2.position.set(100, 1, 25);
+  camera2.lookAt(new THREE.Vector3(90, 1, 25));
 
   // レンダラの設定
   const renderer = new THREE.WebGLRenderer();
@@ -29,14 +36,9 @@ function init() {
 
   // カメラの制御を入れる
   const cameraControl1 = new THREE.TrackballControls(
-    camera,
+    camera1,
     document.getElementById("WebGL-output")
   );
-  const cameraControl2 = new THREE.FirstPersonControls(
-    camera,
-    document.getElementById("WebGL-output")
-  );
-  let cameraControl = cameraControl1;
 
   // 平面の作成
   const textureLoader = new THREE.TextureLoader();
@@ -95,8 +97,6 @@ function init() {
   const PREFIX = "SHTV_Prefab_Car_";
   const cars = []; // 車のオブジェクトのリスト
   const carNames = []; // 車の名前のリスト
-  let myCar = null;
-  let myCarName = null;
   const loader = new THREE.GLTFLoader();
   loader.load("glTF/scene.gltf", model => {
     console.log(model);
@@ -140,12 +140,12 @@ function init() {
         myCarName = controls.car;
         myCar = cars[myCarName];
         delete cars[myCarName];
-        myCar.position.set(90, 0, 25);
-        myCar.rotation.y = -Math.PI/2;
+        myCar.position.copy(myCarPosition);
       }
       else {
         if (myCar != null) {
           cars[myCarName] = myCar;
+          myCar = null;
         }
       }
     });
@@ -193,7 +193,6 @@ function init() {
     );
     // コースの描画
     const points = course.getPoints(250);
-    console.log(points);
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
     const material = new THREE.LineBasicMaterial({color: "red"});
     courseObj = new THREE.Line(geometry, material);
@@ -202,9 +201,41 @@ function init() {
     courseObj.renderOrder = 1;
     scene.add(courseObj);
   }
+  
   // 描画処理
   const carPosition = new THREE.Vector3();
   const carTarget = new THREE.Vector3();
+  const myCarPosition = new THREE.Vector3(90, 0, 25);
+  let myCarRotation = -Math.PI/2;
+  let rotationSpeed = 0;
+  const rotationSpeedMax = Math.PI/2;
+  let forwardSpeed = 0;
+  let forwardAcceleration = 0;
+  const forwardSpeedMax = 10;
+  const yAxis = new THREE.Vector3(0, 1, 0);
+  // キー入力
+  window.addEventListener("keydown", event => {
+    console.log(event.keyCode);
+    switch ( event.keyCode ) {
+    case 37: rotationSpeed = rotationSpeedMax; break;
+    case 38:
+    forwardAcceleration = forwardSpeedMax/20;
+    forwardSpeed += forwardAcceleration;
+    break;
+    case 39: rotationSpeed = -rotationSpeedMax; break;
+    case 40: forwardAcceleration = -forwardSpeedMax/40; break;
+    }
+  });
+  window.addEventListener("keyup", event => {
+    switch ( event.keyCode ) {
+      case 37: rotationSpeed = 0; break;
+      case 38: forwardAcceleration = 0; break;
+      case 39: rotationSpeed = 0; break;
+      case 40: forwardAcceleration = 0; break;
+    }
+  });
+  // 画面更新
+  const clock = new THREE.Clock();
   function update(time) {
     // time に経過時間が入っているので
     time /= 1000; // timeを秒単位に直す
@@ -222,8 +253,32 @@ function init() {
       cars[cname].lookAt(carTarget);
       i++;
     }
-    cameraControl.update();
-    renderer.render(scene, camera);
+    if (myCar == null) {
+      cameraControl1.update();
+      renderer.render(scene, camera1);
+    }
+    else {
+      const delta = clock.getDelta();
+      const myCarDirection = new THREE.Vector3(0, 0, 1);
+      if ( forwardSpeed > 0 ) {
+        if ( forwardSpeed > forwardSpeedMax ) {
+          forwardSpeed = forwardSpeedMax;
+        }
+        else {
+          forwardSpeed += forwardAcceleration;
+        }
+        myCarRotation += rotationSpeed * delta;
+        myCar.rotation.y = myCarRotation;
+      }
+      else {
+        forwardAcceleration = 0;
+        forwardSpeed = 0;
+      }
+      myCarDirection.applyAxisAngle(yAxis, myCarRotation);
+      myCarPosition.addScaledVector(myCarDirection, forwardSpeed * delta);
+      myCar.position.copy(myCarPosition);
+      renderer.render(scene, camera2);
+    }
     requestAnimationFrame(update);
   }
 }
